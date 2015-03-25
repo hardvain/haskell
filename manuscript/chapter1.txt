@@ -1,3 +1,2546 @@
-# Chapter 1 
-Hello, world!
+# What is Haskell?
 
+Haskell is a lazy, functional programming language created in the late 1980s by a committee of academics. There were a plethora of lazy functional languages around, everyone had their favorite, and it was hard to communicate ideas. So a bunch of people got together and designed a new language, taking some of the best ideas from existing languages (and a few new ideas of their own). Haskell was born.
+
+So what is Haskell like? Haskell is:
+
+## Functional
+
+There is no precise, accepted meaning for the term “functional”. But when we say that Haskell is a functional language, we usually have in mind two things:
+
+1. Functions are first-class, that is, functions are values which can be used in exactly the same ways as any other sort of value.
+2. The meaning of Haskell programs is centered around evaluating expressions rather than executing instructions.
+
+Taken together, these result in an entirely different way of thinking about programming. Much of this course will be spent exploring this way of thinking.
+
+## Pure
+Haskell expressions are always referentially transparent, that is:
+
+- No mutation! Everything (variables, data structures...) is immutable.
+- Expressions never have “side effects” (like updating global variables or printing to the screen).
+- Calling the same function with the same arguments results in the same output every time.
+
+This may sound crazy at this point. How is it even possible to get anything done without mutation or side
+effects? Well, it certainly requires a shift in thinking (if you’re used to an imperative or object-oriented
+paradigm). But once you’ve made the shift, there are a number of wonderful benefits:
+
+- Equational reasoning and refactoring: In Haskell one can always “replace equals by equals”, just like you learned in algebra class.
+- Parallelism: Evaluating expressions in parallel is easy when they are guaranteed not to affect one another.
+- Fewer headaches: Simply put, unrestricted effects and action-at-a-distance makes for programs that are hard to debug, maintain, and reason about.
+
+## Lazy
+
+In Haskell, expressions are not evaluated until their results are actually needed. This is a simple decision
+with far-reaching consequences, which we will explore throughout the semester. Some of the consequences
+include:
+
+- It is easy to define a new control structure just by defining a function.
+- It is possible to define and work with infinite data structures.
+- It enables a more compositional programming style (see wholemeal programming below).
+- One major downside, however, is that reasoning about time and space usage becomes much more complicated!
+
+## Statically Typed
+
+Every Haskell expression has a type, and types are all checked at compile-time. Programs with type errors
+will not even compile, much less run.
+
+# Themes
+
+Throughout this course, we will focus on three main themes.
+
+## Types
+
+Static type systems can seem annoying. In fact, in languages like C++ and Java, they are annoying. But this
+isn’t because static type systems per se are annoying; it’s because C++ and Java’s type systems are
+insufficiently expressive! This semester we’ll take a close look at Haskell’s type system, which
+
+- Helps clarify thinking and express program structure
+
+The first step in writing a Haskell program is usually to write down all the types. Because Haskell’s
+type system is so expressive, this is a non-trivial design step and
+
+- Serves as a form of documentation
+
+Given an expressive type system, just looking at a function’s type tells you a lot about what the
+function might do and how it can be used, even before you have read a single word of written
+documentation.
+
+- Turns run-time errors into compile-time errors
+
+It’s much better to be able to fix errors up front than to just test a lot and hope for the best. “If it
+compiles, it must be correct” is mostly facetious (it’s still quite possible to have errors in logic even in
+a type-correct program), but it happens in Haskell much more than in other languages.
+
+## Abstraction
+
+“Don’t Repeat Yourself” is a mantra often heard in the world of programming. Also known as the “Abstraction
+Principle”, the idea is that nothing should be duplicated: every idea, algorithm, and piece of data should occur
+exactly once in your code. Taking similar pieces of code and factoring out their commonality is known as the
+process of _abstraction_.
+
+Haskell is very good at abstraction: features like parametric polymorphism, higher-order functions, and type
+classes all aid in the fight against repetition. Our journey through Haskell this semester will in large part be a
+journey from the specific to the abstract.
+
+## Wholemeal programming
+
+Another theme we will explore is _wholemeal programming_. A quote from Ralf Hinze:
+
+> “Functional languages excel at wholemeal programming, a term coined by Geraint Jones.
+Wholemeal programming means to think big: work with an entire list, rather than a sequence of
+elements; develop a solution space, rather than an individual solution; imagine a graph, rather than a single path. The wholemeal approach often offers new insights or provides new
+perspectives on a given problem. It is nicely complemented by the idea of projective
+programming: first solve a more general problem, then extract the interesting bits and pieces by
+transforming the general program into more specialised ones.”
+
+For example, consider this pseudocode in a C/Java-ish sort of language:
+
+```
+lst = [2,3,5,7,11]
+
+int total = 0;
+for ( int i = 0; i < lst.length; i++) {
+  total = total + 3 * lst[i];
+}
+
+print total;
+```
+This code suffers from what Richard Bird refers to as “indexitis”: it has to worry about the low-level details of
+iterating over an array by keeping track of a current index. It also mixes together what can more usefully be
+thought of as two separate operations: multiplying every item in a list by 3, and summing the results.
+
+In Haskell, we can just write
+
+```active haskell
+lst = [2,3,5,7,11]
+
+total = sum (map (3*) lst)
+
+main = print total
+```
+In this course we’ll explore the shift in thinking represented by this way of programming, and examine how and why Haskell makes it possible.
+
+# Declarations and Variables
+
+Here is some Haskell code:
+```active haskell 
+x :: Int
+x = 3
+-- Note that comments are preceded by two hyphens
+{- or enclosed
+   in curly brace/hypens pairs. -}
+-- x = 4
+
+main = print x
+```
+
+Try uncommenting the line `x=4` above; you should see the error `Multiple declarations of 'x'`.
+
+The above code declares a variable `x` with type `Int` (`::` is pronounced “has type”) and declares the value of `x` to be 3. Note that this will be the value of `x` forever (at least, in this particular program). The value of `x` cannot be changed later.
+
+In Haskell, _variables are not mutable boxes_; they are just names for values!
+
+Put another way, `=` does not denote _assignment_ like it does in many other languages. Instead, `=` denotes _definition_, like it does in mathematics. That is, `x = 4` should not be read as “`x` gets 4” or “assign 4 to `x`”, but as “`x` is defined to be 4”.
+
+What do you think this code means?
+```haskell
+y :: Int
+y = y + 1
+```
+
+@@@
+Because `=` denotes _definition_ rather than _assignment_, this does **not** increment the value of `y`. Instead, this statement is taken as a _recursive_ definition; evaluation of `y` yields
+```haskell
+y = y + 1
+  = (y + 1) + 1
+  = ((y + 1) + 1) + 1
+  =
+  .
+  .
+  .
+```
+resulting in an endless loop.
+@@@
+
+# Basic Types
+
+```haskell
+-- Machine-sized integers
+i :: Int
+i = -78
+```
+
+`Int`s are guaranteed by the Haskell language standard to accommodate values at least up to ±2^29, but the
+exact size depends on your architecture. For example, on many 64-bit architectures the range is ±2^63 . You can find the range on a particular machine by evaluating the following:
+```active haskell
+main = print 
+-- show
+  (minBound :: Int, maxBound :: Int)
+-- /show
+```
+
+[Note that idiomatic Haskell uses `camelCase` for identifier names. If you don’t like it, tough luck.]
+
+The `Integer` type, on the other hand, is limited only by the amount of memory on your machine.
+
+```active haskell
+-- Arbitrary-precision integers
+n :: Integer
+n = 1234567890987654321987340982334987349872349874534
+
+reallyBig :: Integer
+reallyBig = 2^(2^(2^(2^2)))
+
+numDigits :: Int
+numDigits = length (show reallyBig)
+
+main = print numDigits
+```
+
+For floating-point numbers, there is `Double`:
+
+```haskell
+d1, d2 :: Double
+d1 = 4.5387
+d2 = 6.2831e-4
+```
+
+There is also a single-precision floating point type, `Float`, but it is not used much.
+
+```haskell
+-- Booleans
+b1, b2 :: Bool
+b1 = True
+b2 = False
+
+-- Unicode characters
+c1, c2, c3 :: Char
+c1 = 'x'
+c2 = 'Ø'
+c3 = 'ダ'
+
+-- Strings are lists of characters with special syntax
+s :: String
+s = "Hello, Haskell!"
+```
+
+# GHCi
+
+*GHCi* is an interactive Haskell REPL (Read-Eval-Print-Loop) that comes with GHC. At the GHCi prompt, you
+can evaluate expressions, load Haskell files with `:load` (`:l`) (and reload them with `:reload` (`:r`)), ask for the type of an expression with `:type` (`:t`), and many other things (try `:?` for a list of commands). 
+
+# Arithmetic
+Try evaluating each of the following expressions in GHCi:
+
+```haskell
+ex01 = 3 + 2
+ex02 = 19 - 27
+ex03 = 2.35 * 8.6
+ex04 = 8.7 / 3.1
+ex05 = mod 19 3
+ex06 = 19 `mod` 3
+ex07 = 7 ^ 222
+ex08 = (-3) * (-7)
+```
+Note how \`backticks\` make a function name into an infix operator. Note also that negative numbers must
+often be surrounded by parentheses, to avoid having the negation sign parsed as subtraction. (Yes, this is ugly. I’m sorry.)
+This, however, gives an error:
+
+```active haskell
+i = 30 :: Int
+n = 10 :: Integer
+main = print (i + n)
+```
+
+Addition is only between values of the same numeric type, and Haskell does not do implicit conversion. You must explicitly convert with:
+
+- `fromIntegral`: converts from any integral type (`Int` or `Integer`) to any other numeric type.
+- `round`, `floor`, `ceiling`: convert floating-point numbers to `Int` or `Integer`.
+
+Now try this:
+
+```active haskell
+i = 30 :: Int
+main = print (i / i)
+```
+This is an error since `/` performs floating-point division only. For integer division we can use `div`:
+
+```active haskell
+i = 30 :: Int
+main = print (i `div` i, 12 `div` 5)
+```
+
+If you are used to other languages which do implicit conversion of numeric types, this can all seem rather prudish and annoying at first. However, I promise you’ll get used to it, and in time you may even come to appreciate it. Implicit numeric conversion encourages sloppy thinking about numeric code.
+
+# Boolean Logic
+
+As you would expect, Boolean values can be compared with `(&&)` (logical and), `(||)` (logical or), and `not`. For example,
+
+```haskell
+ex11 = True && False
+ex12 = not (False || True)
+```
+
+Things can be compared for equality with `(==)` and `(/=)`, or compared for order using `(<)`, `(>)`, `(<=)`, and `(>=)`.
+
+```haskell
+ex13 = ('a' == 'a')
+ex14 = (16 /= 3)
+ex15 = (5 > 3) && ('p' <= 'q')
+ex16 = "Haskell" > "C++"
+```
+
+Haskell also has `if` expressions: `if b then t else f` is an expression which evaluates to `t` if the Boolean expression `b` evaluates to `True`, and `f` if `b` evaluates to `False`. Notice that `if` expressions are very different than `if` statements. For example, with an `if` statement, the `else` part can be optional; an omitted `else` clause means "if the test evaluates to `False` then do nothing". With an `if` expression, on the other hand, the `else` part is required, since the `if` expression must result in some value.
+
+# Defining Basic Functions
+We can write functions on integers by cases.
+
+```active haskell
+-- Compute the sum if the integers from 1 to n.
+sumtorial :: Integer -> Integer
+sumtorial 0 = 0
+sumtorial n = n + sumtorial (n - 1)
+
+main = print (sumtorial 10)
+```
+
+Note that the syntax for the type of a function `sumtorial :: Integer -> Integer` says that `sumtorial` is a function which takes an `Integer` as input and yields another `Integer` as output.
+
+Each clause is checked in order from top to bottom, and the first matching clause is chosen. For example, `sumtorial 0` evaluates to `0`, since the first clause is matched. `sumtorial 3` does not match the first clause (`3` is not `0`), so the second clause is tried. A variable like `n` matches anything, so the second clause matches and `sumtorial 3` evaluates to `3 + sumtorial (3-1)` (which can then be evaluated further).
+
+Choices can also be made based on arbitrary Boolean expressions using _guards_. For example:
+```active haskell
+hailstone :: Integer -> Integer
+hailstone n
+  | n `mod` 2 == 0 = n `div` 2
+  | otherwise      = 3 * n + 1
+  
+main = print (hailstone 3)
+```
+Any number of guards can be associated with each clause of a function definition, each of which is a Boolean expression. If the clause’s patterns match, the guards are evaluated in order from top to bottom, and the first one which evaluates to `True` is chosen. If none of the guards evaluate to `True`, matching continues with the next clause.
+
+For example, suppose we evaluate `hailstone 3`. First, `3` is matched against `n`, which succeeds (since a variable matches anything). Next, <code>(n \`mod\` 2 == 0)</code> is evaluated; it is `False` since `n = 3` does not result in a remainder of `0` when divided by `2`. `otherwise` is just a convenient synonym for `True`, so the second
+guard is chosen, and the result of `hailstone 3` is thus `3 * 3 + 1 = 10`.
+
+As a more complex (but more contrived) example:
+
+```active haskell
+foo :: Integer -> Integer
+foo 0 = 16
+foo 1
+  | "Haskell" > "C++" = 3
+  | otherwise         = 4
+foo n
+  | n < 0           = 0
+  | n `mod` 17 == 2 = -43
+  | otherwise       = n + 3
+  
+main = print [foo (-3), foo 0, foo 1, foo 36, foo 38]
+
+```
+
+As a final note about Boolean expressions and guards, suppose we wanted to abstract out the test of
+evenness used in defining `hailstone`. A first attempt is shown below:
+
+```active haskell
+isEven :: Integer -> Bool
+isEven n
+  | n `mod` 2 == 0 = True
+  | otherwise      = False
+  
+main = print [isEven 2, isEven 5]
+```
+
+This _works_, but is much too complicated. Can you see why?
+
+@@@
+The code returns `True` or `False`, depending whether <code>n \`mod\` 2 == 0</code> is `True` or `False`. It would have been much simpler to write it as
+
+```haskell
+isEven : Integer -> Bool
+isEven n = n `mod` 2 == 0
+```
+@@@
+
+# Pairs
+
+We can pair things together like so:
+
+```haskell
+p :: (Int, Char)
+p = (3, 'x')
+```
+
+Notice that the (x,y) notation is used both for the _type_ of a pair and a pair _value_.
+
+The elements of a pair can be extracted again with _pattern matching_:
+
+```active haskell
+sumPair :: (Int, Int) -> Int
+sumPair (x,y) = x + y
+
+main = print (sumPair (3,4))
+```
+
+Haskell also has triples, quadruples, ... but you should never use them. As we’ll see in the next lesson, there are much better ways to package three or more pieces of information together.
+
+# Using functions
+
+To apply a function to some arguments, just list the arguments after the function, separated by spaces, like this:
+
+```active haskell
+f x y z = x + y + z
+main = print (f 3 17 8)
+```
+
+The above example applies the function `f` to the three arguments `3`, `17`, and `8`.
+
+Note that function application has higher precedence than any infix operators! So it would be incorrect to write `f 3 n+1 7` if you intend to pass `n+1` as the second argument to `f`, because this parses as `(f 3 n) + (1 7)`. Instead, one must write `f 3 (n+1) 7`.
+
+# Constructing Lists
+
+The simplest possible list is the empty list:
+
+```haskell
+emptyList = []
+```
+
+Other lists are built up from the empty list using the _cons_ operator, `(:)`. Cons takes an element and a list, and produces a new list with the element prepended to the front.
+
+```haskell
+a = 1 : []
+b = 3 : (1 : [])
+c = [2,3,4] == 2 : 3 : 4 : []
+```
+We can see that `[2,3,4]` notation is just convenient shorthand for `2 : 3 : 4 : []`. Note also that these are really singly-linked lists, and **not** arrays.
+
+``` active haskell
+-- /show
+hailstone :: Integer -> Integer
+hailstone n
+  | n `mod` 2 == 0 = n `div` 2
+  | otherwise      = 3 * n + 1
+  
+-- show
+hailstoneSeq :: Integer -> [Integer]
+hailstoneSeq 1 = [1]
+hailstoneSeq n = n : hailstoneSeq (hailstone n)
+
+main = print (hailstoneSeq 5)
+```
+We stop the hailstone sequence when we reach 1. The hailstone sequence for a general n consists of n
+itself, followed by the hailstone sequence for `hailstone n`, that is, the number obtained by applying the hailstone transformation once to `n`.
+
+# Functions on Lists
+
+We can write functions on lists using _pattern matching_.
+
+```active haskell
+-- Compute the length of a list of Integers
+intListLength :: [Integer] -> Integer
+intListLength [] = 0
+intListLength (x:xs) = 1 + intListLength xs
+
+main = print (intListLength [1,2,3,4,5])
+```
+
+The first clause says that the length of an empty list is 0. The second clause says that if the input list looks like `(x:xs)`, that is, a first element xconsed onto a remaining list `xs`, then the length is one more than the length of `xs`.
+
+Since we don’t use `x` at all we could also replace it by an underscore: `intListLength (_:xs) = 1 + intListLength xs`.
+
+We can also use nested patterns:
+
+```active haskell
+sumEveryTwo :: [Integer] -> [Integer]
+sumEveryTwo []         = [] -- Do nothing to the empty list
+sumEveryTwo (x:[])     = [] -- Do nothing to lists with a single element
+sumEveryTwo (x:(y:zs)) = (x + y) : sumEveryTwo zs
+
+main = print (sumEveryTwo [1,2,3,4,5,6,7,8])
+```
+
+Note how the last clause matches a list starting with `x` and followed by... a list starting with `y` and followed by the list `zs`. We don’t actually need the extra parentheses, so `sumEveryTwo (x:y:zs) = ...` would be equivalent.
+
+# Combining Functions
+
+It’s good Haskell style to build up more complex functions by combining many simple ones.
+
+```active haskell
+hailstone :: Integer -> Integer
+hailstone n
+  | n `mod` 2 == 0 = n `div` 2
+  | otherwise      = 3 * n + 1
+  
+
+hailstoneSeq :: Integer -> [Integer]
+hailstoneSeq 1 = [1]
+hailstoneSeq n = n : hailstoneSeq (hailstone n)
+
+-- Compute the length of a list of Integers
+intListLength :: [Integer] -> Integer
+intListLength [] = 0
+intListLength (x:xs) = 1 + intListLength xs
+
+-- show
+-- The number of hailstone steps needed to reach 1 from a given number
+hailstoneLen :: Integer -> Integer
+hailstoneLen n = intListLength (hailstoneSeq n) - 1
+
+main = print (hailstoneLen 5)
+```
+
+This may seem inefficient to you: it generates the entire hailstone sequence first and then finds its length, which wastes lots of memory... doesn’t it? Actually, it doesn’t! Because of Haskell’s lazy evaluation, each element of the sequence is only generated as needed, so the sequence generation and list length calculation are interleaved. The whole computation uses only O(1) memory, no matter how long the sequence. [Actually, this is a tiny white lie, but explaining why (and how to fix it) will have to wait a few lessons.]
+
+# A Word About Error Messages
+
+Actually, six:
+
+## Don't be scared of error messages!
+
+GHC’s error messages can be rather long and (seemingly) scary. However, usually they’re long not because they are obscure, but because they contain a lot of useful information! Here’s an example:
+
+
+
+```
+Prelude> 'x' ++ "foo"
+
+<interactive>:2:1:
+    Couldn't match expected type `[Char]' with actual type `Char'
+    In the first argument of `(++)', namely 'x'
+    In the expression: 'x' ++ "foo"
+    In an equation for `it': it = 'x' ++ "foo"
+```
+
+First we are told <code> Couldn't match expected type \`[Char]' with actual type \`Char' </code>. This means that something was expected to have a list type, but actually had type `Char`. What something? The next line tells us: it’s the first argument of `(++)` which is at fault, namely, `'x'`. The next lines go on to give us a bit more context.
+
+Now we can see what the problem is: clearly `'x'` has type `Char`, as the first line said. Why would it be expected to have a list type? Well, because it is used as an argument to `(++)`, which takes a list as its first argument.
+
+When you get a huge error message, resist your initial impulse to run away; take a deep breath; and read it carefully. You won’t necessarily understand the entire thing, but you will probably learn a lot, and you may just get enough information to figure out what the problem is.
+
+# Enumeration Types
+
+Like many programming languages, Haskell allows programmers to create their own _enumeration types_.
+Here’s a simple example:
+
+```haskell
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+```
+
+This declares a new type called `Thing` with five _data constructors_ `Shoe`, `Ship`, etc which are the (only) values of type `Thing`. [The `deriving Show` is a magical incantation which tells GHC to automatically generate default code for converting `Thing`s to `String`s. This is what GHCi uses when printing the value of an expression of type `Thing`.]
+
+```haskell
+shoe :: Thing
+shoe = Shoe
+
+listO'Things :: [Thing]
+listO'Things = [Shoe, SealingWax, King, Cabbage, King]
+```
+
+We can write functions on `Thing`s by _pattern matching_:
+
+```active haskell
+-- /show
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+  
+-- show
+isSmall :: Thing -> Bool
+isSmall Shoe       = True
+isSmall Ship       = False
+isSmall SealingWax = True
+isSmall Cabbage    = True
+isSmall King       = False
+
+main = print (isSmall Cabbage)
+```
+Recalling how function clauses are tried in order from top to bottom, we could also make the definition of `isSmall` a bit shorter like so:
+
+```active haskell
+-- /show
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+  
+-- show
+isSmall2 :: Thing -> Bool
+isSmall2 Ship       = False
+isSmall2 King       = False
+isSmall2 _          = True
+
+main = print (isSmall2 Cabbage)
+```
+
+# Beyond Enumerations
+
+`Thing` is an _enumeration_ type, similar to those provided by other languages such as Java or C++. However, enumerations are actually only a special case of Haskell’s more general algebraic data types. As a first example of a data type which is not just an enumeration, consider the definition of `FailableDouble`:
+
+```haskell
+data FailableDouble = Failure 
+                    | OK Double
+  deriving Show
+```
+This says that the `FailableDouble` type has two data constructors. The first one, `OK`, takes an
+argument of type `Double`. So `OK` by itself is not a value of type `FailableDouble`; we need to give it a `Double`. For example, `OK 3.4` is a value of type `FailableDouble`.
+
+```active haskell
+-- /show
+data FailableDouble = Failure 
+                    | OK Double
+  deriving Show
+  
+-- show
+a = Failure
+b = OK 3.4
+
+main = print (a,b)
+```
+
+_Exercise_: What is the type of `OK`?
+
+@@@
+For any `x` of type `Double`, `OK x` has type `FailableDouble`. We must therefore have
+`OK :: Double -> FailableDouble`.
+@@@
+
+Here's one way we might use our new `FailableDouble` type:
+
+```active haskell
+-- /show
+data FailableDouble = Failure 
+                    | OK Double
+  deriving Show
+  
+-- show
+safeDiv :: Double -> Double -> FailableDouble
+safeDiv _ 0 = Failure
+safeDiv x y = OK (x / y)
+
+main = print (safeDiv 2 0, safeDiv 3 4)
+```
+
+More pattern matching! Notice how in the `OK` case we can give a name to the `Double` that comes along with it. For some applications, we might consider mapping a failed computation to a value of zero:
+
+```active haskell
+-- /show
+data FailableDouble = Failure 
+                    | OK Double
+  deriving Show
+  
+-- show
+failureToZero :: FailableDouble -> Double
+failureToZero Failure = 0
+failureToZero (OK d) = d
+
+main = print (failureToZero Failure, failureToZero (OK 3.4))
+```
+
+Data constructors can have more than one argument:
+
+```active haskell
+-- /show
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+  
+-- show
+-- Store a person's name, age, and favorite Thing
+data Person = Person String Int Thing
+  deriving Show
+  
+brent :: Person
+brent = Person "Brent" 30 SealingWax
+
+stan :: Person
+stan = Person "Stan" 94 Cabbage
+
+getAge :: Person -> Int
+getAge (Person _ a _) = a
+
+main = print (getAge brent)
+```
+
+Notice how the type constructor and data constructor are both named `Person`, but they inhabit different namespaces and are different things. This idiom (giving the type and data constructor of a one-constructor type the same name) is common, but can be confusing until you get used to it.
+
+# Algebraic Data Types in General
+
+In general, an algebraic data type has one or more data constructors, and each data constructor can have zero or more arguments.
+
+```haskell
+data AlgDataType = Constr1 Type11 Type12
+                 | Constr2 Type21
+                 | Constr3 Type31 Type32 Type33
+                 | Constr4
+```
+
+This specifies that a value of type `AlgDataType` can be constructed in one of four ways: using `Constr1`, `Constr2`, `Constr3`, or `Constr4`. Depending on the constructor used, an `AlgDataType` value may contain some other values. For example, if it was constructed using `Constr1`, then it comes along with two values, one of type `Type11`and one of type `Type12`.
+
+One final note: type and data constructor names must always start with a capital letter; variables (including names of functions) must always start with a lowercase letter. (Otherwise, Haskell parsers would have quite a difficult job figuring out which names represent variables and which represent constructors).
+
+# Pattern Matching
+
+We've seen pattern matching in a few specific cases, but let’s see how pattern-matching works in general. Fundamentally, pattern matching is about taking apart a value by finding out which constructor it was built with. This information can be used as the basis for deciding what to do—indeed, in Haskell, this is the only way to make a decision.
+
+For example, to decide what to do with a value of type `AlgDataType` (the made-up type defined in the
+previous section), we could write something like
+
+```haskell
+foo (Constr1 a b)   = ...
+foo (Constr2 a)     = ...
+foo (Constr3 a b c) = ...
+foo Constr4         = ...
+```
+Note how we also get to give names to the values that come along with each constructor. Note also that
+parentheses are required around patterns consisting of more than just a single constructor.
+
+This is the main idea behind patterns, but there are a few more things to note.
+
+- An underscore \_ can be used as a “wildcard pattern” which matches anything.
+- A pattern of the form `x@pat` can be used to match a value against the pattern `pat`, but also give the name `x` to the entire value being matched. For example:
+```active haskell
+-- /show
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+  
+
+-- Store a person's name, age, and favorite Thing
+data Person = Person String Int Thing
+  deriving Show
+
+brent :: Person
+brent = Person "Brent" 30 SealingWax
+
+-- show
+baz :: Person -> String
+baz p@(Person n _ _) = "The name field of (" ++ show p ++ ") is " ++ n
+
+main = putStrLn (baz brent)
+```
+[Previously we had used `print` to display results, but here we use `putStrLn`, because the value we're displaying is already a `String`. Change the code to use `print` to see the difference.]
+
+- Patterns can be _nested_. For example,
+
+```active haskell
+-- /show
+data Thing = Shoe
+           | Ship
+           | SealingWax
+           | Cabbage
+           | King
+  deriving Show
+  
+
+-- Store a person's name, age, and favorite Thing
+data Person = Person String Int Thing
+  deriving Show
+
+
+-- show
+checkFav :: Person -> String
+checkFav (Person n _ SealingWax) = n ++ ", you're my kind of person!"
+checkFav (Person n _ _)          = n ++ ", your favorite thing is lame."
+
+main = putStrLn (checkFav (Person "Brent" 30 SealingWax))
+```
+Note how we nest the pattern `SealingWax` inside the pattern for `Person`.
+
+In general, the following grammar defines what can be used as a pattern:
+
+```
+pat ::= _
+      | var
+      | var @ ( pat )
+      | ( Constructor pat1 pat2 ... patn )
+```
+The first line says that an underscore is a pattern. The second line says that a variable by itself is a pattern; such a pattern matches anything, and “binds” the given variable name to the matched value. The third line specifies _@ patterns_. The last line says that a constructor name followed by a sequence of patterns is itself a pattern; such a pattern matches a value if that value was constructed using the given constructor, and `pat1` through `patn` all match the values contained by the constructor, recursively.
+
+[In actual fact, the full grammar of patterns includes yet more features still, but the rest would take us too far afield for now.]
+
+Note that literal values like 2 or `'c'` can be thought of as constructors with no arguments. It is as if the types `Int` and `Char` were defined like
+
+```haskell
+data Int = 0 | 1 | -1 | 2 | -2 | ...
+data Char = 'a' | 'b' | 'c' | ...
+```
+which means that we can pattern-match against literal values. (Of course, `Int` and `Char` are not actually defined this way.)
+
+# Case Expessions
+
+The fundamental construct for doing pattern-matching in Haskell is the `case` expression. In general, a `case` expression looks like
+
+```haskell
+case exp of
+  pat1 -> exp1
+  pat2 -> exp2
+  ...
+```
+When evaluated, the expression `exp` is matched against each of the patterns `pat1`, `pat2`, ... in turn. The first matching pattern is chosen, and the entire `case` expression evaluates to the expression corresponding to the matching pattern. For example,
+
+```haskell
+n = case "Hello" of
+  []      -> 3
+  ('H':s) -> length s
+  _       -> 7
+```
+evaluates to 4 (the second pattern is chosen; the third pattern matches too, of course, but it is never
+reached).
+
+In fact, the syntax for defining functions we have seen is really just convenient syntax sugar for defining a `case` expression. For example, the definition of `failureToZero` given previously can equivalently be written as
+
+```active haskell
+-- /show
+data FailableDouble = Failure 
+                    | OK Double
+  deriving Show
+  
+-- show
+failureToZero' :: FailableDouble -> Double
+failureToZero' x = case x of
+  Failure -> 0
+  OK d    -> d
+  
+main = print (failureToZero' Failure, failureToZero' (OK 3.4))
+```
+
+# Recursive Data Types
+
+Data types can be _recursive_, that is, defined in terms of themselves. In fact, we have already seen a recursive type—the type of lists. A list is either empty, or a single element followed by a remaining list. We could define our own list type like so:
+
+```haskell
+data IntList = Empty | Cons Int IntList
+```
+
+Haskell’s own built-in lists are quite similar; they just get to use special built-in syntax ([] and :) (Of course, they also work for any type of elements instead of just `Int`s; more on this in the next lesson.)
+
+We often use recursive functions to process recursive data types:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+
+-- show
+intListProd :: IntList -> Int
+intListProd Empty = 1
+intListProd (Cons x xs) = x * intListProd xs
+
+main = print (intListProd (Cons 3 (Cons 2 (Cons 4 Empty))))
+```
+As another simple example, we can define a type of binary trees with an `Int` value stored at each internal node, and a `Char` stored at each leaf (Don't ask me what you would use such a tree for; it's an example, OK?):
+
+```active haskell
+data Tree = Leaf Char
+          | Node Tree Int Tree
+  deriving Show
+
+tree :: Tree
+tree = Node (Leaf 'x') 1 (Node (Leaf 'y') 2 (Leaf 'z'))
+
+main = print tree
+```
+
+At this point, you might think Haskell programmers spend most of their time writing recursive functions. In fact, they _hardly ever_ do!
+
+How is this possible? The key is to notice that although recursive functions can theoretically do pretty much anything, in practice there are certain common patterns that come up over and over again. By abstracting out these patterns into library functions, programmers can leave the low-level details of actually doing recursion to these functions, and think about problems at a higher level—that’s the goal of _wholemeal programming_.
+
+# Recursion Patterns
+
+Recall our simple definition of lists of `Int` values:
+
+```haskell
+data IntList = Empty | Cons Int IntList
+  deriving Show
+```
+
+What sorts of things might we want to do with an `IntList`? Here are a few common possibilities:
+
+- Perform some operation on every element of the list
+- Keep only some elements of the list, and throw others away, based on a test
+- "Summarize" the elements of the list somehow (find their sum, product, maximum...).
+- You can probably think of others!
+
+## Map
+
+Let’s think about the first one (“perform some operation on every element of the list”). For example, we could add one to every element in a list:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+addOneToAll :: IntList -> IntList
+addOneToAll Empty = Empty
+addOneToAll (Cons x xs) = Cons (x + 1) (addOneToAll xs)
+
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (addOneToAll myIntList)
+```
+Or we could ensure that every element in a list is nonnegative by taking the absolute value:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+absAll :: IntList -> IntList
+absAll Empty = Empty
+absAll (Cons x xs) = Cons (abs x) (absAll xs)
+
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (absAll myIntList)
+```
+
+Or we could square every element:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+squareAll :: IntList -> IntList
+squareAll Empty = Empty
+squareAll (Cons x xs) = Cons (x * x) (squareAll xs)
+
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (squareAll myIntList)
+```
+
+At this point, big flashing red lights and warning bells should be going off in your head. These three functions look way too similar. There ought to be some way to abstract out the commonality so we don’t have to repeat ourselves! 
+
+There is indeed a way—can you figure it out? Which parts are the same in all three examples and which
+parts change? 
+
+The thing that changes, of course, is the operation we want to perform on each element of the list. We can specify this operation as a _function_ of type `Int-> Int`. Here is where we begin to see how incredibly useful it is to be able to pass functions as inputs to other functions!
+
+```haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+mapIntList :: (Int -> Int) -> IntList -> IntList
+mapIntList _ Empty       = Empty
+mapIntList f (Cons x xs) = Cons (f x) (mapIntList f xs)
+```
+
+We can now use `mapIntList` to implement `addOneToAll`, `absAll`, and `squareAll`:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+
+mapIntList :: (Int -> Int) -> IntList -> IntList
+mapIntList _ Empty       = Empty
+mapIntList f (Cons x xs) = Cons (f x) (mapIntList f xs)
+-- show
+
+addOne x = x + 1
+square x = x * x
+
+addOneToAll xs = mapIntList addOne xs
+
+absAll xs = mapIntList abs xs
+
+squareAll xs   = mapIntList square xs
+
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (absAll myIntList)
+```
+
+## Filter
+
+Another common pattern is when we want to keep only some elements of a list, and throw others away,
+based on a test. For example, we might want to keep only the even numbers:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+keepOnlyEven :: IntList -> IntList
+keepOnlyEven Empty = Empty
+keepOnlyEven (Cons x xs) 
+  | even x    = Cons x (keepOnlyEven xs)
+  | otherwise = keepOnlyEven xs
+  
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (keepOnlyEven myIntList)
+```
+How can we generalize this pattern? What stays the same, and what do we need to abstract out?
+The thing to abstract out is the test (or predicate) used to determine which values to keep. A predicate is a
+function of type `Int -> Bool` which returns `True` for those elements which should be kept, and `False` for those which should be discarded. So we can write `filterIntList` as follows:
+
+```active haskell
+-- /show
+data IntList = Empty | Cons Int IntList
+  deriving Show
+-- show
+filterIntList :: (Int -> Bool) -> IntList -> IntList
+filterIntList _ Empty = Empty
+filterIntList p (Cons x xs)
+  | p x       = Cons x (filterIntList p xs)
+  | otherwise = filterIntList p xs
+
+myIntList = Cons 2 (Cons (-3) (Cons 5 Empty))
+
+main = print (filterIntList even myIntList)
+```
+
+## Fold
+
+The final pattern we mentioned was to “summarize” the elements of the list; this is also variously known as a “fold” or “reduce” operation. We’ll come back to this in the next lesson. In the meantime, you might want to think about how to abstract out this pattern!
+
+# Polymorphism
+
+We've now written some nice, general functions for mapping and filtering over lists of `Int`s. But we’re not done generalizing! What if we wanted to filter lists of `Integer`s? or `Bool`s? Or lists of lists of trees of stacks of `String`s? We’d have to make a new data type and a new function for each of these cases. Even worse, the code would be exactly the same; the only thing that would be different is the type signatures. Can’t Haskell help us out here?
+
+Of course it can! Haskell supports polymorphism for both data types and functions. The word “polymorphic” comes from Greek (πολύμορφος) and means “having many forms”: something which is polymorphic works for multiple types.
+
+## Polymorphic data types
+
+First, let's see how to declare a polymorphic data type.
+
+```haskell
+data List t = E | C t (List t)
+```
+
+(using abbreviated forms of the previous `Empty` and `Cons` constructors)
+
+Whereas before we had `data IntList = ...`, we now have `data List t = ...` The `t` is a type variable which can stand for any type. (Type variables must start with a lowercase letter, whereas types must start with uppercase.) `data List t = ...` means that the `List` type is parameterized by a type, in much the same way that a function can be parameterized by some input.
+
+Given a type `t`, a `List t` consists of either the constructor `E`, or the constructor `C` along with a value of type `t` and another `List t`. Here are some examples:
+
+```haskell
+lst1 :: List Int
+lst1 = C 3 (C 5 (C 2 E))
+
+lst2 :: List Char
+lst2 = C 'x' (C 'y' (C 'z' E))
+
+lst3 :: List Bool
+lst3 = C True (C False E)
+```
+
+# Polymorphic functions
+
+Now, let’s generalize `filterIntList` to work over our new polymorphic `List`s. We can just take code of `filterIntList` and replace `Empty` by `E` and `Cons` by `C`:
+
+```active haskell
+-- /show
+data List t = E | C t (List t)
+  deriving Show
+-- show
+filterList _ E = E
+filterList p (C x xs)
+  | p x       = C x (filterList p xs)
+  | otherwise = filterList p xs
+  
+myList = C 2 (C (-3) (C 5 E))
+
+main = print (filterList even myList)
+```
+
+Now, what is the type of `filterList`? Let’s see what type GHCi infers for it:
+
+```haskell
+*Main> :t filterList
+filterList :: (t -> Bool) -> List t -> List t
+```
+
+We can read this as: “for any type `t`, `filterList` takes a function from `t` to `Bool`, and a list of `t`s, and returns a list of `t`s.”
+
+What about generalizing `mapIntList`? What type should we give to a function `mapList` that applies a
+function to every element in a `List t`?
+
+Our first idea might be to give it the type
+```haskell
+mapList :: (t -> t) -> List t -> List t
+```
+
+This works, but it means that when applying `mapList`, we always get a list with the same type of elements as the list we started with. This is overly restrictive: we’d like to be able to do things like `mapList show` in order to convert, say, a list of `Int`s into a list of `String`s. Here, then, is the most general possible type for `mapList`, along with an implementation:
+
+```active haskell
+-- /show
+data List t = E | C t (List t)
+  deriving Show
+-- show
+mapList :: (a -> b) -> List a -> List b
+mapList f (C x xs) = C (f x) (mapList f xs)
+mapList f E        = E
+
+myList = C 2 (C (-3) (C 5 E))
+
+double x = 2 * x
+
+main = print (mapList double myList)
+```
+
+One important thing to remember about polymorphic functions is that __the caller gets to pick the types__.
+When you write a polymorphic function, it must work for every possible input type. This—together with the
+fact that Haskell has no way to directly make make decisions based on what type something is—has some
+interesting implications which we’ll explore later.
+
+# The Prelude
+
+The `Prelude` is a module with a bunch of standard definitions that gets implicitly imported into every Haskell
+program. It’s worth spending some time skimming through its documentation to familiarize oneself with
+the tools that are available.
+
+Of course, polymorphic lists are defined in the `Prelude`, along with __many useful polymorphic functions
+for working with them__. For example, `filter` and `map` are the counterparts to our `filterList` and `mapList`. In fact, the __`Data.List` module contains many more list functions still__.
+
+Another useful polymorphic type to know is `Maybe`, defined as 
+
+```haskell
+data Maybe a = Nothing | Just a
+```
+
+A value of type `Maybe a` either contains a value of type `a` (wrapped in the `Just` constructor), or it is `Nothing` (representing some sort of failure or error). __The `Data.Maybe` module has functions for working with `Maybe` values__.
+
+# Total and Partial Functions
+
+Consider the polymorphic type `[a] -> a`.
+
+What functions could have such a type? The type says that given a list of things of type `a`, the function must produce some value of type `a`. For example, the Prelude function `head` has this type.
+
+...But what happens if `head` is given an empty list as input? The source code for `head` looks something like this:
+
+```active haskell
+-- /show
+import Prelude hiding (head)
+-- show
+head :: [a] -> a
+head (x:_) =  x
+head []    =  error "head"
+
+emptyStringList :: [String]
+emptyStringList = []
+
+main = print (head emptyStringList)
+```
+
+It crashes! There’s nothing else it possibly could do, since it must work for _all_ types. There’s no way to make
+up an element of an arbitrary type out of thin air.
+
+`head` is what is known as a partial function: there are certain inputs for which `head` will crash. Functions which have certain inputs that will make them recurse infinitely are also called partial. Functions which are well-defined on _all_ possible inputs are known as _total functions_.
+
+It is good Haskell practice to avoid partial functions as much as possible. Actually, avoiding partial functions is good practice in _any_ programming language—but in most of them it’s ridiculously annoying. Haskell tends to make it quite easy and sensible.
+
+`head` is a mistake! It should not be in the `Prelude`. Other partial `Prelude` functions you should almost never use include `tail`, `init`, `last`, and `(!!)`. 
+
+What to do instead?
+
+## Replacing partial functions
+
+Often partial functions like `head`, `tail`, and so on can be replaced by pattern-matching. Consider the following two definitions:
+
+```haskell
+doStuff1 :: [Int] -> Int
+doStuff1 []  = 0
+doStuff1 [_] = 0
+doStuff1 xs  = head xs + head (tail xs)
+
+doStuff2 :: [Int] -> Int
+doStuff2 []        = 0
+doStuff2 [_]       = 0
+doStuff2 (x1:x2:_) = x1 + x2
+```
+These functions compute exactly the same result, and they are both total. But only the second one is
+_obviously_ total, and it is much easier to read anyway.
+
+## Writing partial functions
+
+What if you find yourself _writing_ a partial function? There are two approaches to take. The first is to change the output type of the function to indicate the possible failure. Recall the definition of `Maybe`:
+
+```haskell
+data Maybe a = Nothing | Just a
+```
+
+Now, suppose we were writing `head`. We could rewrite it safely like this:
+
+```active haskell
+-- /show
+emptyStringList :: [String]
+emptyStringList = []
+-- show
+safeHead :: [a] -> Maybe a
+safeHead []    = Nothing
+safeHead (x:_) = Just x
+
+main = print (safeHead emptyStringList, safeHead ["hello"])
+```
+
+Indeed, there is exactly such a function defined in the `safe` package.
+
+Why is this a good idea?
+
+1. `safeHead` will never crash.
+2. The type of `safeHead` makes it obvious that it may fail for some inputs.
+3. The type system ensures that users of `safeHead` must appropriately check the return value of `safeHead` to see whether they got a value or `Nothing`.
+
+In some cases, `safeHead` is still "partial" but we have reflected the partiality in the type system, so it is now safe. The goal is to have the types tell us as much as possible about the behavior of functions.
+
+OK, but what if we know that we will only use `head` in situations where we are guaranteed to have a non-empty list? In such a situation, it is really annoying to get back a `Maybe a`, since we have to expend effort dealing with a case which we “know” cannot actually happen.
+
+The answer is that if some condition is really guaranteed, then the types ought to reflect the guarantee! Then the compiler can enforce your guarantees for you. For example:
+
+```haskell
+data NonEmptyList a = NEL a [a]
+
+nelToList :: NonEmptyList a -> [a]
+nelToList (NEL x xs) = x:xs
+
+listToNEL :: [a] -> Maybe (NonEmptyList a)
+listToNEL []     = Nothing
+listToNEL (x:xs) = Just (NEL x xs)
+
+headNEL :: NonEmptyList a -> a
+headNEL (NEL x _) = x
+
+tailNEL :: NonEmptyList a -> [a]
+tailNEL (NEL _ xs) = xs
+```
+
+You might think doing such things is only for chumps who are not coding super-geniuses like you. Of course, you would never make a mistake like passing an empty list to a function which expects only non-empty ones. Right? Well, there’s definitely a chump involved, but it’s not who you think.
+
+
+# Anonymous Functions
+
+Suppose we want to write a function
+
+`greaterThan100 :: [Integer] -> [Integer]`
+
+which keeps only those Integers from the input list which are greater than 100. For example,
+
+```haskell
+greaterThan100 [1,9,349,6,907,98,105] == [349,907,105]
+```
+
+By now, we know a nice way to do this:
+
+``` active haskell
+gt100 :: Integer -> Bool
+gt100 x = x > 100
+
+greaterThan100 :: [Integer] -> [Integer]
+greaterThan100 xs = filter gt100 xs
+
+main = print (greaterThan100 [1,9,349,6,907,98,105])
+```
+
+But it’s annoying to give gt100 a name, since we are probably never going to use it again. Instead, we can use an anonymous function, also known as a lambda abstraction:
+
+```active haskell
+greaterThan100 :: [Integer] -> [Integer]
+greaterThan100 xs = filter (\x -> x > 100) xs
+
+main = print (greaterThan100 [1,9,349,6,907,98,105])
+```
+
+`\x -> x > 100` (the backslash is supposed to look kind of like a lambda with the short leg missing) is the function which takes a single argument `x` and outputs whether `x` is greater than 100.
+
+Lambda abstractions can also have multiple arguments. For example:
+
+``` active haskell
+main = print ((\x y z -> [x,2*y,3*z]) 5 6 3)
+```
+
+However, in the particular case of `greaterThan100`, there’s an even better way to write it, without a lambda abstraction:
+
+```active haskell
+greaterThan100 :: [Integer] -> [Integer]
+greaterThan100 xs = filter (>100) xs
+
+main = print (greaterThan100 [1,9,349,6,907,98,105])
+```
+
+`(>100)` is an operator section: if `?` is an operator, then `(?y)` is equivalent to the function `\x -> x ? y`, and `(y?)` is equivalent to `\x -> y ? x`. In other words, using an operator section allows us to partially apply an operator to one of its two arguments. What we get is a function of a single argument. Here are some examples:
+
+```active haskell
+main = print ((>100) 102, (100>) 102, map (*6) [1..5])
+```
+
+Before reading on, can you write down a function whose type is
+`(b -> c) -> (a -> b) -> (a -> c)`
+?
+
+Let’s try. It has to take two arguments, both of which are functions, and output a function. So it must be something like
+
+```haskell
+foo f g = ...
+```
+
+In the place of the `...`, we need to write a function of type `a -> c`. Well, we can create a function using a lambda abstraction:
+
+```haskell
+foo f g = \x -> ...
+```
+
+`x` will have type `a`, and now in the `...` we need to write an expression of type `c`. Well, we have a function `g` which can turn an `a` into a `b`, and a function `f` which can turn a `b` into a `c`, so this ought to work:
+
+```haskell
+foo :: (b -> c) -> (a -> b) -> (a -> c)
+foo f g = \x -> f (g x)
+```
+(Quick quiz: why do we need the parentheses around `g x`?)
+
+@@@
+Function application is _left-associative_, so `f g x == (f g) x`, clearly not what we want in this case. More about this coming up...
+@@@
+
+OK, so what was the point of that? Does foo actually do anything useful or was that just a silly exercise in working with types?
+
+As it turns out, foo is really called `(.)`, and represents function composition. That is, if `f` and `g` are functions, then `f . g` is the function which does first `g` and then `f`.
+
+Function composition can be quite useful in writing concise, elegant code. It fits well in a “wholemeal” style where we think about composing together successive high-level transformations of a data structure.
+
+As an example, consider the following function:
+
+```active haskell
+-- /show
+greaterThan100 :: [Integer] -> [Integer]
+greaterThan100 xs = filter (>100) xs
+
+-- show
+myTest :: [Integer] -> Bool
+myTest xs = even (length (greaterThan100 xs))
+
+main = print (myTest [1,9,349,6,907,98,105])
+```
+
+We can rewrite this as:
+
+```active haskell
+-- /show
+greaterThan100 :: [Integer] -> [Integer]
+greaterThan100 xs = filter (>100) xs
+
+-- show
+myTest :: [Integer] -> Bool
+myTest = even . length . greaterThan100
+
+main = print (myTest [1,9,349,6,907,98,105])
+```
+
+This version makes much clearer what is really going on: `myTest'` is just a “pipeline” composed of three smaller functions. This example also demonstrates why function composition seems “backwards”: it’s because function application is backwards! Since we read from left to right, it would make sense to think of values as also flowing from left to right. But in that case we should write `(x)f` to denote giving the value `x` as an input to the function `f`. But no thanks to Alexis Claude Clairaut and Euler, we have been stuck with the backwards notation since 1734.
+
+Let’s take a closer look at the type of `(.)`. If we ask ghci for its type, we get
+
+```haskell
+Prelude> :t (.)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+```
+
+Wait a minute. What’s going on here? What happened to the parentheses around `(a -> c)`?
+
+# Currying and partial application
+
+Remember how the types of multi-argument functions look weird, like they have “extra” arrows in them? For example, consider the function
+
+```active haskell
+f :: Int -> Int -> Int
+f x y = 2*x + y
+
+main = print (f 3 12)
+```
+
+I promised before that there is a beautiful, deep reason for this, and now it’s finally time to reveal it: all functions in Haskell take only one argument. Say what?! But doesn’t the function `f` shown above take two arguments? No, actually, it doesn’t: it takes one argument (an `Int`) and outputs a function (of type `Int -> Int`); that function takes one argument and returns the final answer. In fact, we can equivalently write `f`’s type like this:
+
+```active haskell
+f :: Int -> (Int -> Int)
+f x y = 2*x + y
+
+main = print (f 3 12)
+```
+
+In particular, note that function arrows associate to the right, that is, 
+```haskell
+W -> X -> Y -> Z
+```
+is equivalent to 
+
+```haskell
+W -> (X -> (Y -> Z))
+```
+
+We can always add or remove parentheses around the rightmost top-level arrow in a type. 
+
+Function application, in turn, is left-associative. That is, `f 3 2` is really shorthand for `(f 3) 2`. This makes sense given what we said previously about `f` actually taking one argument and returning a function: we apply `f` to an argument `3`, which returns a function of type `Int -> Int`, namely, a function which takes an `Int` and adds `6` to it. We then apply that function to the argument 2 by writing `(f 3) 2`, which gives us an `Int`. Since function application associates to the left, however, we can abbreviate `(f 3) 2` as `f 3 2`, giving us a nice notation for `f` as a “multi-argument” function.
+
+The “multi-argument” lambda abstraction
+
+```haskell
+\x y z -> ...
+```
+is really just syntax sugar for
+```haskell
+\x -> (\y -> (\z -> ...))
+```
+
+Likewise, the function definition
+```haskell
+f x y z = ...
+```
+is syntax sugar for
+
+```haskell
+f = \x -> (\y -> (\z -> ...))
+```
+
+Note, for example, that we can rewrite our composition function from above by moving the `\x -> ...` from the right-hand side of the `=` to the left-hand side:
+
+```haskell
+comp :: (b -> c) -> (a -> b) -> a -> c
+comp f g x = f (g x)
+```
+This idea of representing multi-argument functions as one-argument functions returning functions is known as currying, named for the British mathematician and logician Haskell Curry. (His first name might sound familiar; yes, it’s the same guy.) Curry lived from 1900-1982 and spent much of his life at Penn State—but he also helped work on ENIAC at UPenn. The idea of representing multi-argument functions as one-argument functions returning functions was actually first discovered by Moses Schönfinkel, so we probably ought to call it schönfinkeling. Curry himself attributed the idea to Schönfinkel, but others had already started calling it “currying” and it was too late.
+
+If we want to actually represent a function of two arguments we can use a single argument which is a tuple. That is, the function
+
+```active haskell
+f :: (Int,Int) -> Int
+f (x,y) = 2*x + y
+
+main = print (f (2,3))
+```
+
+can also be thought of as taking “two arguments”, although in another sense it really only takes one argument which happens to be a pair. In order to convert between the two representations of a two-argument function, the standard library defines functions called curry and uncurry, defined like this (except with different names):
+
+```active haskell
+-- /show
+f :: (Int,Int) -> Int
+f (x,y) = 2*x + y
+
+-- show
+schönfinkel :: ((a,b) -> c) -> a -> b -> c
+schönfinkel f x y = f (x,y)
+
+unschönfinkel :: (a -> b -> c) -> (a,b) -> c
+unschönfinkel f (x,y) = f x y
+
+main = print (schönfinkel f 2 3)
+```
+
+`uncurry`, in particular, can be useful when you have a pair and want to apply a function to it. For example:
+
+```
+Prelude> uncurry (+) (2,3)
+5
+```
+
+# Partial application
+
+The fact that functions in Haskell are curried makes partial application particularly easy. The idea of partial application is that we can take a function of multiple arguments and apply it to just some of its arguments, and get out a function of the remaining arguments. But as we’ve just seen, in Haskell there are no functions of multiple arguments! Every function can be “partially applied” to its first (and only) argument, resulting in a function of the remaining arguments.
+
+Note that Haskell doesn’t make it easy to partially apply to an argument other than the first. The one exception is infix operators, which as we’ve seen, can be partially applied to either of their two arguments using an operator section. In practice this is not that big of a restriction. There is an art to deciding the order of arguments to a function to make partial applications of it as useful as possible: the arguments should be ordered from from “least to greatest variation”, that is, arguments which will often be the same should be listed first, and arguments which will often be different should come last.
+
+# Wholemeal programming
+
+Let’s put some of the things we’ve just learned together in an example that also shows the power of a “wholemeal” style of programming. Consider the function foobar, defined as follows:
+
+```active haskell
+foobar :: [Integer] -> Integer
+foobar []     = 0
+foobar (x:xs)
+  | x > 3     = (7*x + 2) + foobar xs
+  | otherwise = foobar xs
+  
+main = print (foobar [1,2,3,4,5])
+```
+This seems straightforward enough, but it is not good Haskell style. The problem is that it is doing too much at once, and
+working at too low of a level.
+Instead of thinking about what we want to do with each element, we can instead think about making incremental transformations to the entire input, using the existing recursion patterns that we know of. Here’s a much more idiomatic implementation of foobar:
+
+```active haskell
+foobar :: [Integer] -> Integer
+foobar = sum . map (\x -> 7*x + 2) . filter (>3)
+
+main = print (foobar [1,2,3,4,5])
+```
+
+This defines foobar as a “pipeline” of three functions: first, we throw away all elements from the list which are not greater than three; next, we apply an arithmetic operation to every element of the remaining list; finally, we sum the results.
+
+Notice that in the above example, map and filter have been partially applied. For example, the type of `filter` is `(a -> Bool) -> [a] -> [a]`. 
+Applying it to `(>3)` (which has type `Integer -> Bool`) results in a function of type `[Integer] -> [Integer]`, which is exactly the right sort of thing to compose with another function on `[Integer]`.
+
+This style of coding in which we define a function without reference to its arguments—in some sense saying what a function is rather than what it does—is known as “point-free” style. As we can see from the above example, it can be quite beautiful. Some people might even go so far as to say that you should always strive to use point-free style; but taken too far it can become extremely confusing. lambdabot in the #haskell IRC channel has a command @pl for turning functions into equivalent point-free expressions; here’s an example:
+
+```haskell
+@pl \f g x y -> f (x ++ g x) (g y)
+join . ((flip . ((.) .)) .) . (. ap (++)) . (.)
+```
+
+This is clearly not an improvement!
+
+# Folds
+
+We have one more recursion pattern on lists to talk about: folds. Here are a few functions on lists that follow a similar pattern: all of them somehow “combine” the elements of the list into a final answer.
+
+```haskell
+sum' :: [Integer] -> Integer
+sum' []     = 0
+sum' (x:xs) = x + sum' xs
+
+product' :: [Integer] -> Integer
+product' [] = 1
+product' (x:xs) = x * product' xs
+
+length' :: [a] -> Int
+length' []     = 0
+length' (_:xs) = 1 + length' xs
+```
+
+What do these three functions have in common, and what is different? As usual, the idea will be to abstract out the parts that vary, aided by the ability to define higher-order functions.
+
+```haskell
+fold :: (a -> b -> b) -> b -> [a] -> b
+fold f z []     = z
+fold f z (x:xs) = f x (fold f z xs)
+```
+
+Notice how `fold` essentially replaces `[]` with `z` and `(:)` with `f`, that is,
+
+```haskell
+fold f [a,b,c] z == a `f` (b `f` (c `f` z))
+```
+
+(If you think about fold from this perspective, you may be able to figure out how to generalize fold to data types other than lists…)
+
+Now let’s rewrite `sum'`, `product'`, and `length'` in terms of `fold`:
+
+```haskell
+sum'     = fold (+) 0
+product' = fold (*) 1
+length'  = fold (\_ s -> 1 + s) 0
+
+myList = [1,2,3,4,5]
+
+main = print (sum' myList, product' myList, length' myList)
+```
+
+(Instead of `(\_ s -> 1 + s)` we could also write `(\_ -> (1+))` or even `(const (1+))`.)
+
+Of course, `fold` is already provided in the standard Prelude, under the name `foldr`. The arguments to `foldr` are in a slightly different order but it’s the exact same function. Here are some Prelude functions which are defined in terms of `foldr`:
+
+```haskell
+length :: [a] -> Int
+sum :: Num a => [a] -> a
+product :: Num a => [a] -> a
+and :: [Bool] -> Bool
+or :: [Bool] -> Bool
+any :: (a -> Bool) -> [a] -> Bool
+all :: (a -> Bool) -> [a] -> Bool
+```
+
+There is also `foldl`, which folds “from the left”. That is,
+
+```haskell
+foldr f [a,b,c] z == a `f` (b `f` (c `f` z))
+foldl f [a,b,c] z == ((z `f` a) `f` b) `f` c
+```
+
+In general, however, you should use `foldl'` from `Data.List` instead, which does the same thing as `foldl` but is more efficient.
+
+Haskell's particular brand of polymorphism is known as *parametric*
+polymorphism.  Essentially, this means that polymorphic functions must
+work *uniformly* for any input type.  This turns out to have some
+interesting implications for both programmers and users of polymorphic
+functions.
+
+Parametricity
+-------------
+
+Consider the type
+
+``` haskell
+a -> a -> a
+```
+
+Remember that `a` is a *type variable* which can stand for any type.
+What sorts of functions have this type?
+
+What about this:
+
+``` haskell
+f :: a -> a -> a
+f x y = x && y
+```
+
+It turns out that this doesn't work.  The syntax is valid, at least,
+but it does not type check.  In particular we get this error message:
+
+``` haskell
+    Couldn't match type `a' with `Bool'
+      `a' is a rigid type variable bound by
+          the type signature for f :: a -> a -> a
+    In the second argument of `(&&)', namely `y'
+    In the expression: x && y
+    In an equation for `f': f x y = x && y
+```
+
+The reason this doesn't work is that the *caller* of a polymorphic
+function gets to choose the type.  Here we, the *implementors*, have
+tried to choose a specific type (namely, `Bool`), but we may be given
+`String`, or `Int`, or even some type defined by someone using `f`,
+which we can't possibly know about in advance.  In other words, you
+can read the type
+
+``` haskell
+a -> a -> a
+```
+
+as a *promise* that a function with this type will work no matter what
+type the caller chooses.
+
+Another implementation we could imagine is something like
+
+``` haskell
+    f a1 a2 = case (typeOf a1) of
+                Int  -> a1 + a2
+                Bool -> a1 && a2
+                _    -> a1
+```
+
+where `f` behaves in some specific ways for certain types.  After all,
+we can certainly implement this in Java:
+
+``` java
+    class AdHoc {
+
+        public static Object f(Object a1, Object a2) {
+            if (a1 instanceof Integer && a2 instanceof Integer) {
+                return (Integer)a1 + (Integer)a2;
+            } else if (a1 instanceof Boolean && a2 instanceof Boolean) {
+                return (Boolean)a1 && (Boolean)a2;
+            } else {
+                return a1;
+            }
+        }
+
+        public static void main (String[] args) {
+            System.out.println(f(1,3));
+            System.out.println(f(true, false));
+            System.out.println(f("hello", "there"));
+        }
+
+    }
+```
+
+
+    [byorgey@LVN513-9:~/tmp]$ javac Adhoc.java && java AdHoc
+    4
+    false
+    hello
+
+
+But it turns out there is no way to write this in Haskell.  Haskell
+does not have anything like Java's `instanceof` operator: it is not
+possible to ask what type something is and decide what to do based on
+the answer.  One reason for this is that Haskell types are *erased* by
+the compiler after being checked: at runtime, there is no type
+information around to query!  However, as we will see, there are other
+good reasons too.
+
+This style of polymorphism is known as *parametric polymorphism*.  We
+say that a function like `f :: a -> a -> a` is *parametric* in the
+type `a`.  Here "parametric" is just a fancy term for "works uniformly
+for any type chosen by the caller".  In Java, this style of
+polymorphism is provided by *generics* (which, you guessed it, were
+inspired by Haskell: one of the original designers of Haskell,
+[Philip Wadler](http://homepages.inf.ed.ac.uk/wadler/), was later one
+of the key players in the development of Java generics).
+
+So, what functions actually *could* have this type?  Actually, there
+are only two!
+
+``` haskell
+f1 :: a -> a -> a
+f1 x y = x
+
+f2 :: a -> a -> a
+f2 x y = y
+```
+
+So it turns out that the type `a -> a -> a` really tells us quite a
+lot.
+
+Let's play the parametricity game!  Consider each of the following
+polymorphic types.  For each type, determine what behavior(s) a
+function of that type could possibly have.
+
+  * `a -> a`
+  * `a -> b`
+  * `a -> b -> a`
+  * `[a] -> [a]`
+  * `(b -> c) -> (a -> b) -> (a -> c)`
+  * `(a -> a) -> a -> a`
+
+Two views on parametricity
+--------------------------
+
+As an *implementor* of polymorphic functions, especially if you are
+used to a language with a construct like Java's `instanceof`, you
+might find these restrictions annoying.  "What do you mean, I'm not
+allowed to do X?"
+
+However, there is a dual point of view.  As a *user* of polymorphic
+functions, parametricity corresponds not to *restrictions* but to
+*guarantees*.  In general, it is much easier to use and reason about
+tools when those tools give you strong guarantees as to how they will
+behave.  Parametricity is part of the reason that just looking at the
+type of Haskell function can tell you so much about the function.
+
+OK, fine, but sometimes it really is useful to be able to decide what
+to do based on types!  For example, what about addition?  We've
+already seen that addition is polymorphic (it works on `Int`,
+`Integer`, and `Double`, for example) but clearly it has to know what
+type of numbers it is adding to decide what to do: adding two
+`Integer`s works in a completely different way than adding two
+`Double`s.  So how does it actually work? Is it just magical?
+
+In fact, it isn't!  And we *can* actually use Haskell to decide what
+to do based on types---just not in the way we were imagining before.
+Let's start by taking a look at the type of `(+)`:
+
+    Prelude> :t (+)
+    (+) :: Num a => a -> a -> a
+
+Hmm, what's that `Num a =>` thingy doing there?  In fact, `(+)` isn't
+the only standard function with a funny double-arrow thing in its
+type.  Here are a few others:
+
+``` haskell
+(==) :: Eq a   => a -> a -> Bool
+(<)  :: Ord a  => a -> a -> Bool
+show :: Show a => a -> String
+```
+
+So what's going on here?
+
+Type classes
+------------
+
+`Num`, `Eq`, `Ord`, and `Show` are *type classes*, and we say that
+`(==)`, `(<)`, and `(+)` are "type-class polymorphic".  Intuitively,
+type classes correspond to *sets of types* which have certain
+operations defined for them, and type class polymorphic functions work
+only for types which are instances of the type class(es) in question.
+As an example, let's look in detail at the `Eq` type class.
+
+``` haskell
+class Eq a where
+  (==) :: a -> a -> Bool
+  (/=) :: a -> a -> Bool
+```
+
+We can read this as follows: `Eq` is declared to be a type class with
+a single parameter, `a`.  Any type `a` which wants to be an *instance*
+of `Eq` must define two functions, `(==)` and `(/=)`, with the
+indicated type signatures.  For example, to make `Int` an instance of
+`Eq` we would have to define `(==) :: Int -> Int -> Bool` and `(/=) ::
+Int -> Int -> Bool`.  (Of course, there's no need, since the standard
+Prelude already defines an `Int` instance of `Eq` for us.)
+
+Let's look at the type of `(==)` again:
+
+``` haskell
+(==) :: Eq a => a -> a -> Bool
+```
+
+The `Eq a` that comes before the `=>` is a *type class constraint*.
+We can read this as saying that for any type `a`, *as long as `a` is
+an instance of `Eq`*, `(==)` can take two values of type `a` and
+return a `Bool`.  It is a type error to call the function `(==)` on
+some type which is not an instance of `Eq`.  If a normal polymorphic
+type is a promise that the function will work for whatever type the
+caller chooses, a type class polymorphic function is a *restricted*
+promise that the function will work for any type the caller chooses,
+*as long as* the chosen type is an instance of the required type
+class(es).
+
+The important thing to note is that when `(==)` (or any type class
+method) is used, the compiler uses type inference to figure out *which
+implementation of `(==)` should be chosen*, based on the inferred
+types of its arguments.  In other words, it is something like using an
+overloaded method in a language like Java.
+
+To get a better handle on how this works in practice, let's make our
+own type and declare an instance of `Eq` for it.
+
+``` haskell
+data Foo = F Int | G Char
+
+instance Eq Foo where
+  (F i1) == (F i2) = i1 == i2
+
+  (G c1) == (G c2) = c1 == c2
+
+  _ == _ = False
+  foo1 /= foo2 = not (foo1 == foo2)
+```
+
+It's a bit annoying that we have to define both `(==)` and `(/=)`.  In
+fact, type classes can give *default implementations* of methods in
+terms of other methods, which should be used whenever an instance does
+not override the default definition with its own.  So we could imagine
+declaring `Eq` like this:
+
+``` haskell
+class Eq a where
+  (==) :: a -> a -> Bool
+  (/=) :: a -> a -> Bool
+  x /= y = not (x == y)
+```
+
+Now anyone declaring an instance of `Eq` only has to specify an
+implementation of `(==)`, and they will get `(/=)` for free.  But if
+for some reason they want to override the default implementation of
+`(/=)` with their own, they can do that as well.
+
+In fact, the `Eq` class is actually declared like this:
+
+``` haskell
+class Eq a where
+  (==), (/=) :: a -> a -> Bool
+  x == y = not (x /= y)
+  x /= y = not (x == y)
+```
+
+This means that when we make an instance of `Eq`, we can define
+*either* `(==)` or `(/=)`, whichever is more convenient; the other one
+will be automatically defined in terms of the one we specify.
+(However, we have to be careful: if we don't specify either one, we
+get infinite recursion!)
+
+As it turns out, `Eq` (along with a few other standard type classes)
+is special: GHC is able to automatically generate instances of `Eq`
+for us.  Like so:
+
+``` haskell
+data Foo' = F' Int | G' Char
+  deriving (Eq, Ord, Show)
+```
+
+This tells GHC to automatically derive instances of the `Eq`, `Ord`,
+and `Show` type classes for our data type `Foo`.
+
+**Type classes and Java interfaces**
+
+Type classes are quite similar to Java interfaces.  Both define a set
+of types/classes which implement a specified list of operations.
+However, there are a couple of important ways in which type classes
+are more general than Java interfaces:
+
+1. When a Java class is defined, any interfaces it implements must be declared.  Type class instances, on the other hand, are declared separately from the declaration of the corresponding types, and can even be put in a separate module.
+
+2. The types that can be specified for type class methods are more general and flexible than the signatures that can be given for Java interface methods, especially when *multi-parameter type classes* enter the picture.  
+
+For example, consider a hypothetical type class
+
+``` haskell
+class Blerg a b where
+  blerg :: a -> b -> Bool
+```
+
+Using `blerg` amounts to doing *multiple dispatch*: which
+implementation of `blerg` the compiler should choose depends on
+*both* the types `a` and `b`.  There is no easy way to do this in
+Java.
+
+Haskell type classes can also easily handle binary (or ternary, or
+...) methods, as in
+
+``` haskell
+class Num a where
+  (+) :: a -> a -> a
+  ...
+```
+
+There is no nice way to do this in Java: for one thing, one of the
+two arguments would have to be the "privileged" one which is actually
+getting the `(+)` method invoked on it, and this asymmetry is awkward.
+Furthermore, because of Java's subtyping, getting two arguments of a
+certain interface type does *not* guarantee that they are actually the
+same type, which makes implementing binary operators such as `(+)`
+awkward (usually requiring some runtime type checks).
+
+**Standard type classes**
+
+Here are some other standard type classes you should know about:
+
+  * [Ord](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html#t%3AOrd)
+    is for types whose elements can be *totally ordered*, that is, where
+    any two elements can be compared to see which is less than the other.
+    It provides comparison operations like `(<)` and `(<=)`, and also the
+    `compare` function.
+
+  * [Num](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html#t%3ANum)
+    is for "numeric" types, which support things like addition,
+    subtraction, and multipication.  One very important thing to note is
+    that integer literals are actually type class polymorphic:
+
+        Prelude> :t 5
+        5 :: Num a => a
+
+    This means that literals like `5` can be used as `Int`s,
+    `Integer`s, `Double`s, or any other type which is an instance of
+    `Num` (`Rational`, `Complex Double`, or even a type you define...)
+
+  * [Show](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html#t%3AShow)
+    defines the method `show`, which is used to convert values into
+    `String`s.
+
+  * [Read](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html#v:Eq/Read) is the dual of `Show`.
+
+  * [Integral](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html#t%3AIntegral) represents whole number types such as `Int` and `Integer`.
+
+**A type class example**
+
+As an example of making our own type class, consider the following:
+
+``` haskell
+class Listable a where
+  toList :: a -> [Int]
+```
+
+We can think of `Listable` as the class of things which can be
+converted to a list of `Int`s.  Look at the type of `toList`:
+
+``` haskell
+toList :: Listable a => a -> [Int]
+```
+
+Let's make some instances for `Listable`.  First, an `Int` can be
+converted to an `[Int]` just by creating a singleton list, and `Bool`
+can be converted similarly, say, by translating `True` to `1` and
+`False` to `0`:
+
+``` active haskell
+class Listable a where
+  toList :: a -> [Int]
+  
+-- show
+instance Listable Int where
+  -- toList :: Int -> [Int]
+  toList x = [x]
+
+instance Listable Bool where
+  toList True  = [1]
+  toList False = [0]
+
+main = print (toList True, toList (7::Int))
+```
+
+We don't need to do any work to convert a list of `Int` to a list of
+`Int`:
+
+``` active haskell
+{-# LANGUAGE FlexibleInstances #-}
+
+class Listable a where
+  toList :: a -> [Int]
+  
+-- show
+instance Listable [Int] where
+  toList = id
+  
+main = print (toList ([2,3,5,7] :: [Int]))
+```
+
+Finally, here's a binary tree type which we can convert to a list by
+flattening:
+
+``` active haskell
+{-# LANGUAGE FlexibleInstances #-}
+
+class Listable a where
+  toList :: a -> [Int]
+  
+-- show
+data Tree a = Empty | Node a (Tree a) (Tree a)
+
+instance Listable (Tree Int) where
+  toList Empty        = []
+  toList (Node x l r) = toList l ++ [x] ++ toList r
+
+myTree :: Tree Int
+myTree = Node 1 (Node 2 Empty (Node 3 Empty Empty)) (Node 4 Empty Empty)
+
+main = print (toList myTree)
+```
+
+If we implement other functions in terms of `toList`, they also get a
+`Listable` constraint.  For example:
+
+``` active haskell
+{-# LANGUAGE FlexibleInstances #-}
+
+class Listable a where
+  toList :: a -> [Int]
+  
+data Tree a = Empty | Node a (Tree a) (Tree a)
+
+instance Listable (Tree Int) where
+  toList Empty        = []
+  toList (Node x l r) = toList l ++ [x] ++ toList r
+
+myTree :: Tree Int
+myTree = Node 1 (Node 2 Empty (Node 3 Empty Empty)) (Node 4 Empty Empty)
+
+-- show
+-- to compute sumL, first convert to a list of Ints, then sum
+sumL x = sum (toList x)
+
+main = print (sumL myTree)
+```
+
+`ghci` informs us that type type of `sumL` is
+
+``` haskell
+sumL :: Listable a => a -> Int
+```
+
+which makes sense: `sumL` will work only for types which are instances
+of `Listable`, since it uses `toList`.  What about this one?
+
+``` active haskell
+{-# LANGUAGE FlexibleInstances #-}
+
+class Listable a where
+  toList :: a -> [Int]
+  
+data Tree a = Empty | Node a (Tree a) (Tree a)
+
+instance Listable [Int] where
+  toList = id
+  
+-- show
+foo x y = sum (toList x) == sum (toList y) || x < y
+
+main = print (foo ([2,3,5,7]::[Int]) ([3,6,9]::[Int]))
+```
+
+`ghci` informs us that the type of `foo` is
+
+``` haskell
+foo :: (Listable a, Ord a) => a -> a -> Bool
+```
+
+That is, `foo` works over types which are instances of *both*
+`Listable` and `Ord`, since it uses both `toList` and comparison on
+the arguments.
+
+As a final, and more complex, example, consider this instance:
+
+``` active haskell
+{-# LANGUAGE FlexibleInstances #-}
+
+class Listable a where
+  toList :: a -> [Int]
+
+instance Listable Int where
+  -- toList :: Int -> [Int]
+  toList x = [x]
+
+data Tree a = Empty | Node a (Tree a) (Tree a)
+
+instance Listable [Int] where
+  toList = id
+
+instance Listable (Tree Int) where
+  toList Empty        = []
+  toList (Node x l r) = toList l ++ [x] ++ toList r
+
+myTree :: Tree Int
+myTree = Node 1 (Node 2 Empty (Node 3 Empty Empty)) (Node 4 Empty Empty)
+
+-- show
+instance (Listable a, Listable b) => Listable (a,b) where
+  toList (x,y) = toList x ++ toList y
+  
+main = print (toList (3::Int), toList myTree)
+```
+
+Notice how we can put type class constraints on an instance as well as
+on a function type.  This says that a pair type `(a,b)` is an instance
+of `Listable` as long as `a` and `b` both are.  Then we get to use
+`toList` on values of types `a` and `b` in our definition of `toList`
+for a pair.  Note that this definition is *not* recursive!  The
+version of `toList` that we are defining is calling *other* versions
+of `toList`, not itself.
+
+
+Suggested reading:
+
+  * [foldr foldl foldl'](http://haskell.org/haskellwiki/Foldr_Foldl_Foldl') from the Haskell wiki
+
+
+In the first lesson, I mentioned that Haskell is *lazy*, and
+promised to eventually explain in more detail what this means.  The
+time has come!
+
+Strict evaluation
+-----------------
+
+Before we talk about *lazy evaluation* it will be useful to look at
+some examples of its opposite, *strict evaluation*.
+
+Under a strict evaluation strategy, function arguments are completely
+evaluated *before* passing them to the function. For example, suppose
+we have defined
+
+``` haskell
+f x y = x + 2
+```
+
+In a strict language, evaluating `f 5 (29^35792)` will first
+completely evaluate `5` (already done) and `29^35792` (which is a lot
+of work) before passing the results to `f`.
+
+Of course, in this *particular* example, this is silly, since `f`
+ignores its second argument, so all the work to compute `29^35792` was
+wasted.  So why would we want this?
+
+The benefit of strict evaluation is that it is easy to predict *when*
+and *in what order* things will happen.  Usually languages with
+strict evaluation will even specify the order in which function
+arguments should be evaluated (*e.g.* from left to right).
+
+For example, in Java if we write
+
+    f (release_monkeys(), increment_counter())
+    
+we know that the monkeys will be released, and then the counter will
+be incremented, and then the results of doing those things will be
+passed to `f`, and it does not matter whether `f` actually ends up
+using those results.  
+
+If the releasing of monkeys and incrementing of the counter could
+independently happen, or not, in either order, depending on whether
+`f` happens to use their results, it would be extremely
+confusing. When such "side effects" are allowed, strict evaluation is
+really what you want.
+
+Side effects and purity
+-----------------------
+
+So, what's really at issue here is the presence or absence of *side
+effects*.  By "side effect" we mean *anything that causes evaluation
+of an expression to interact with something outside itself*.  The root
+issue is that such outside interactions are time-sensitive.  For
+example:
+
+* Modifying a global variable – it matters when this happens since
+  it may affect the evaluation of other expressions
+* Printing to the screen – it matters when this happens since it may
+  need to be in a certain order with respect to other writes to the
+  screen
+* Reading from a file or the network – it matters when this happens
+  since the contents of the file can affect the outcome of the
+  expression
+
+As we have seen, lazy evaluation makes it hard to reason about when
+things will be evaluated; hence including side effects in a lazy
+language would be extremely unintuitive. Historically, this is the
+reason Haskell is pure: initially, the designers of Haskell wanted to
+make a *lazy* functional language, and quickly realized it would be
+impossible unless it also disallowed side effects.
+
+But... a language with *no* side effects would not be very useful.
+The only thing you could do with such a language would be to load up
+your programs in an interpreter and evaluate expressions. (Hmm... that
+sounds familiar...) You would not be able to get any input from the
+user, or print anything to the screen, or read from a file.  The
+challenge facing the Haskell designers was to come up with a way to
+allow such effects in a principled, restricted way that did not
+interfere with the essential purity of the language.  They finally did
+come up with something (namely, the `IO` monad) which we'll talk about
+in a few weeks.
+
+Lazy evaluation
+---------------
+
+![relax](http://www.cis.upenn.edu/~cis194/static/relax.jpg)
+
+So now that we understand strict evaluation, let's see what lazy
+evaluation actually looks like. Under a lazy evaluation strategy,
+evaluation of function arguments is *delayed as long as possible*:
+they are not evaluated until it actually becomes necessary to do so.
+When some expression is given as an argument to a function, it is
+simply packaged up as an *unevaluated expression* (called a "thunk",
+don't ask me why) without doing any actual work.
+
+For example, when evaluating `f 5 (29^35792)`, the second argument
+will simply be packaged up into a thunk without doing any actual
+computation, and `f` will be called immediately.  Since `f` never uses
+its second argument the thunk will just be thrown away by the garbage
+collector.
+
+Pattern matching drives evaluation
+----------------------------------
+
+So, when is it "necessary" to evaluate an expression? The examples
+above concentrated on whether a function *used* its arguments, but
+this is actually not the most important distinction. Consider the
+following examples:
+
+``` haskell
+f1 :: Maybe a -> [Maybe a]
+f1 m = [m,m]
+
+f2 :: Maybe a -> [a]
+f2 Nothing  = []
+f2 (Just x) = [x]
+```
+
+`f1` and `f2` both *use* their argument.  But there is still a big
+difference between them.  Although `f1` uses its argument `m`, it does
+not need to know anything about it.  `m` can remain completely
+unevaluated, and the unevaluated expression is simply put in a list.
+Put another way, the result of `f1 e` does not depend on the shape of
+`e`.
+
+`f2`, on the other hand, needs to know something about its argument in
+order to proceed: was it constructed with `Nothing` or `Just`?  That
+is, in order to evaluate `f2 e`, we must first evaluate `e`, because
+the result of `f2` depends on the shape of `e`.
+
+The other important thing to note is that thunks are evaluated *only
+enough* to allow a pattern match to proceed, and no further!  For
+example, suppose we wanted to evaluate `f2 (safeHead [3^500, 49])`.
+`f2` would force evaluation of the call to `safeHead [3^500, 49]`,
+which would evaluate to `Just (3^500)`---note that the `3^500` is
+*not* evaluated, since `safeHead` does not need to look at it, and
+neither does `f2`.  Whether the `3^500` gets evaluated later depends
+on how the result of `f2` is used.
+
+The slogan to remember is "*pattern matching drives evaluation*".  To
+reiterate the important points:
+
+* Expressions are only evaluated when pattern-matched
+
+* ...only as far as necessary for the match to proceed, and no farther!
+
+Let's do a slightly more interesting example: we'll evaluate `take 3 (repeat 7)`.  For reference, here are the definitions of `repeat` and
+`take`:
+
+``` haskell
+repeat :: a -> [a]
+repeat x = x : repeat x
+
+take :: Int -> [a] -> [a]
+take n _      | n <= 0 =  []
+take _ []              =  []
+take n (x:xs)          =  x : take (n-1) xs
+```
+
+
+Carrying out the evaluation step-by-step looks something like this:
+
+``` haskell
+      take 3 (repeat 7)
+          { 3 <= 0 is False, so we proceed to the second clause, which
+	    needs to match on the second argument. So we must expand
+	    repeat 7 one step. }
+    = take 3 (7 : repeat 7)
+          { the second clause does not match but the third clause
+            does. Note that (3-1) does not get evaluated yet! }
+    = 7 : take (3-1) (repeat 7)
+          { In order to decide on the first clause, we must test (3-1)
+            <= 0 which requires evaluating (3-1). }
+    = 7 : take 2 (repeat 7)
+          { 2 <= 0 is False, so we must expand repeat 7 again. }
+    = 7 : take 2 (7 : repeat 7)
+          { The rest is similar. }
+    = 7 : 7 : take (2-1) (repeat 7)
+    = 7 : 7 : take 1 (repeat 7)
+    = 7 : 7 : take 1 (7 : repeat 7)
+    = 7 : 7 : 7 : take (1-1) (repeat 7)
+    = 7 : 7 : 7 : take 0 (repeat 7)
+    = 7 : 7 : 7 : []
+```
+
+(Note that although evaluation *could* be implemented exactly like the
+above, most Haskell compilers will do something a bit more
+sophisticated.  In particular, GHC uses a technique called *graph
+reduction*, where the expression being evaluated is actually
+represented as a *graph*, so that different parts of the expression
+can share pointers to the same subexpression.  This ensures that work
+is not duplicated unnecessarily.  For example, if `f x = [x,x]`,
+evaluating `f (1+1)` will only do *one* addition, because the
+subexpression `1+1` will be shared between the two occurrences of
+`x`.)
+
+Consequences
+------------
+
+Laziness has some very interesting, pervasive, and nonobvious
+consequences.  Let's explore a few of them.
+
+**Purity**
+
+As we've already seen, choosing a lazy evaluation strategy essentially
+*forces* you to also choose purity (assuming you don't want
+programmers to go insane).
+
+**Understanding space usage**
+
+Laziness is not all roses.  One of the downsides is that it sometimes
+becomes tricky to reason about the space usage of your programs.
+Consider the following (innocuous-seeming) example:
+
+``` haskell
+-- Standard library function foldl, provided for reference
+foldl :: (b -> a -> b) -> b -> [a] -> b
+foldl _ z []     = z
+foldl f z (x:xs) = foldl f (f z x) xs
+```
+
+Let's consider how evaluation proceeds when we evaluate `foldl (+) 0 [1,2,3]` (which sums the numbers in a list):
+
+``` haskell
+      foldl (+) 0 [1,2,3]
+    = foldl (+) (0+1) [2,3]
+	= foldl (+) ((0+1)+2) [3]
+	= foldl (+) (((0+1)+2)+3) []
+	= (((0+1)+2)+3)
+	= ((1+2)+3)
+	= (3+3)
+	= 6
+```
+
+Since the value of the accumulator is not demanded until recursing
+through the entire list, the accumulator simply builds up a big
+unevaluated expression `(((0+1)+2)+3)`, which finally gets reduced to
+a value at the end.  There are at least two problems with this.  One
+is that it's simply inefficient: there's no point in transferring all
+the numbers from the list into a different list-like thing (the
+accumulator thunk) before actually adding them up.  The second problem
+is more subtle, and more insidious: evaluating the expression
+`(((0+1)+2)+3)` actually requires pushing the `3` and `2` onto a stack
+before being able to compute `0+1` and then unwinding the stack,
+adding along the way. This is not a problem for this small example,
+but for very long lists it's a big problem: there is usually not as
+much space available for the stack, so this can lead to a stack
+overflow.
+
+The solution in this case is to use the `foldl'` function instead of
+`foldl`, which adds a bit of strictness: in particular, `foldl'`
+requires its second argument (the accumulator) to be evaluated before
+it proceeds, so a large thunk never builds up:
+
+``` haskell
+      foldl' (+) 0 [1,2,3]
+    = foldl' (+) (0+1) [2,3]
+	= foldl' (+) 1 [2,3]
+	= foldl' (+) (1+2) [3]
+	= foldl' (+) 3 [3]
+	= foldl' (+) (3+3) []
+	= foldl' (+) 6 []
+	= 6
+```
+
+As you can see, `foldl'` does the additions along the way, which is
+what we really want.  But the point is that in this case laziness got
+in the way and we had to make our program *less* lazy.
+
+(If you're interested in learning about *how* `foldl'` achieves this,
+you can
+[read about `seq` on the Haskell wiki](http://www.haskell.org/haskellwiki/Seq).)
+
+**Short-circuiting operators**
+
+In some languages (Java, C++) the boolean operators `&&` and `||`
+(logical AND and OR) are *short-circuiting*: for example, if the first
+argument to `&&` evaluates to false, the whole expression will
+immediately evaluate to false without touching the second argument.
+However, this behavior has to be wired into the Java and C++ language
+standards as a special case. Normally, in a strict langauge, both
+arguments of a two-argument function are be evaluated before calling
+the function.  So the short-circuiting behavior of `&&` and `||` is a
+special exception to the usual strict semantics of the language.
+
+In Haskell, however, we can define short-circuiting operators without
+any special cases.  In fact, `(&&)` and `(||)` are just plan old
+library functions!  For example, here's how `(&&)` is defined:
+
+``` haskell
+(&&) :: Bool -> Bool -> Bool
+True  && x = x
+False && _ = False
+```
+
+Notice how this definition of `(&&)` does not pattern-match on its
+second argument.  Moreover, if the first argument is `False`, the
+second argument is entirely ignored. Since `(&&)` does not
+pattern-match on its second argument at all, it is short-circuiting in
+exactly the same way as the `&&` operator in Java or C++.
+
+Notice that `(&&)` also could have been defined like this:
+
+``` haskell
+(&&!) :: Bool -> Bool -> Bool
+True  &&! True  = True
+True  &&! False = False
+False &&! True  = False
+False &&! False = False
+```
+
+While this version takes on the same values as `(&&)`, it has
+different behavior.  For example, consider the following:
+
+``` active haskell
+(&&!) :: Bool -> Bool -> Bool
+True  &&! True  = True
+True  &&! False = False
+False &&! True  = False
+False &&! False = False
+
+-- show
+main = print (False &&  (34^9784346 > 34987345))
+```
+
+Changing `(&&)` to `(&&')` produces the same result, but just takes a lot longer!  Or how about this:
+
+``` active haskell
+(&&!) :: Bool -> Bool -> Bool
+True  &&! True  = True
+True  &&! False = False
+False &&! True  = False
+False &&! False = False
+
+-- show
+main = print (False &&  (head [] == 'x'))
+```
+
+This prints `False`, but if `(&&)` is replaced with `(&&')`, the program will crash.
+Try it!
+
+All of this points out that there are some interesting issues
+surrounding laziness to be considered when defining a function.
+
+**User-defined control structures**
+
+Taking the idea of short-circuiting operators one step further, in
+Haskell we can define our own *control structures*.
+
+Most languages have some sort of special built-in `if` construct.
+Some thought reveals why: in a way similar to short-circuiting Boolean
+operators, `if` has special behavior.  Based on the value of the test,
+it executes/evaluates only *one* of the two branches.  It would defeat
+the whole purpose if both branches were evaluated every time!
+
+In Haskell, however, we can define `if` as a library function!
+
+``` active haskell
+if' :: Bool -> a -> a -> a
+if' True  x _ = x
+if' False _ y = y
+
+result = if' (3 < 5) "yes" "no"
+
+main = print result
+```
+
+Of course, Haskell *does* have special built-in `if`-expressions, but
+I have never quite understood why.  Perhaps it is simply because the
+language designers thought people would expect it.  "What do you mean,
+this language doesn't have `if`!?"  In any case, `if` doesn't get used
+that much in Haskell anyway; in most situations we prefer
+pattern-matching or guards.
+
+We can also define other control structures – we'll see other examples
+when we discuss monads.
+
+**Infinite data structures**
+
+Lazy evaluation also means that we can work with *infinite data
+structures*.  In fact, we've already seen a few examples, such as
+`repeat 7`, which represents an infinite list containing nothing but
+`7`.  Defining an infinite data structure actually only creates a
+thunk, which we can think of as a "seed" out of which the entire data
+structure can *potentially* grow, depending on what parts actually are
+used/needed.
+
+Another practical application area is "effectively infinite" data
+structures, such as the trees that might arise as the state space of a
+game (such as go or chess).  Although the tree is finite in theory, it
+is so large as to be effectively infinite---it certainly would not fit
+in memory.  Using Haskell, we can define the tree of all possible
+moves, and then write a separate algorithm to explore the tree in
+whatever way we want. Only the parts of the tree which are actually
+explored will be computed.
+
+**Pipelining/wholemeal programming**
+
+As I have mentioned before, doing "pipelined" incremental
+transformations of a large data structure can actually be
+memory-efficient.  Now we can see why: due to laziness, each stage of
+the pipeline can operate in lockstep, only generating each bit of the
+result as it is demanded by the next stage in the pipeline.
+
+**Dynamic programming**
+
+As a more specific example of the cool things lazy evaluation buys us,
+consider the technique of
+[*dynamic programming*](http://en.wikipedia.org/wiki/Dynamic_programming).
+Usually, one must take great care to fill in entries of a dynamic
+programming table in the proper order, so that every time we compute
+the value of a cell, its dependencies have already been computed.  If
+we get the order wrong, we get bogus results.
+
+However, using lazy evaluation we can get the Haskell runtime to work
+out the proper order of evaluation for us!  For example, here is some
+Haskell code to solve the
+[0-1 knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem).
+Note how we simply define the array `m` in terms of itself, using the
+standard recurrence, and let lazy evaluation work out the proper order
+in which to compute its cells.
+
+``` active haskell
+import Data.Array
+
+knapsack :: [Double]   -- values 
+           -> [Integer]  -- nonnegative weights
+           -> Integer    -- knapsack size
+           -> Double     -- max possible value
+knapsack vs ws maxW = m!(numItems-1, maxW)
+  where numItems = length vs
+        m = array ((-1,0), (numItems-1, maxW)) $
+              [((-1,w), 0) | w <- [0 .. maxW]] ++
+              [((i,0), 0) | i <- [0 .. numItems-1]] ++
+              [((i,w), best) 
+                  | i <- [0 .. numItems-1]
+                  , w <- [1 .. maxW]
+                  , let best
+                          | ws!!i > w  = m!(i-1, w)
+                          | otherwise = max (m!(i-1, w)) 
+                                            (m!(i-1, w - ws!!i) + vs!!i)
+              ]
+
+example = knapsack [3,4,5,8,10] [2,3,4,5,9] 20
+
+main = print example
+```
